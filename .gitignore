@@ -9,10 +9,12 @@ __pycache__/
 # Secrets and local config
 .env
 
-# Data and trained models are large or regenerable; we decide per-file later
+# Raw data is not redistributed here (see README). The small trained model in models/ IS committed.
 data/raw/
-*.joblib
 *.pkl
+
+# Fine-tuned DistilBERT weights (~255 MB): reproducible with python -m spamclf.train_bert
+local_models/
 
 # Editor / OS noise
 .vscode/

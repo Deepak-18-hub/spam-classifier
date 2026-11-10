@@ -1,3 +1,6 @@
-pandas==3.1.1
-matplotlib==3.11.2
-ipykernel==7.4.0
+# Runtime: what the API needs (also what the Docker image installs).
+# Only top-level packages are pinned; their dependencies (numpy, scipy, pydantic...) float.
+# The saved model must be loaded with the same scikit-learn it was trained with.
+scikit-learn==1.9.1
+fastapi==0.162.2
+uvicorn==0.54.0
