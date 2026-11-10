@@ -1,0 +1,11 @@
+# Optional: M5 DistilBERT comparison (python -m spamclf.train_bert). Needs an NVIDIA GPU.
+# NOT needed by the API, the tests, or the Docker image.
+#
+# Windows tip: the CUDA build of torch is ~2.6 GB. If pip stalls or times out, download the wheel
+# with `curl.exe -L -C - --retry 40 --retry-all-errors -o <file> <url>` (resumable), check its sha256
+# against the one on https://download.pytorch.org/whl/cu126/torch/, then `pip install <file>`.
+# Install torch first, then the rest: resolving both in one command hung pip's dependency resolver.
+-r requirements-dev.txt
+--extra-index-url https://download.pytorch.org/whl/cu126
+torch==2.14.1+cu126
+transformers==5.22.2
