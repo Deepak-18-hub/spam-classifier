@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spam Classifier</title>
+<style>
+  :root { --bg:#fafaf7; --fg:#1d1d1b; --muted:#6b6b66; --card:#fff; --line:#dcdcd4; --accent:#2f5d50; --spam:#a63d2f; --ham:#2f6b3a; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#161715; --fg:#ecece6; --muted:#9a9a92; --card:#1f201e; --line:#34352f; --accent:#7fb5a3; --spam:#e07b6c; --ham:#7fc48a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui, sans-serif; }
+  main { max-width:40rem; margin:0 auto; padding:2rem 1rem; }
+  h1 { font-size:1.5rem; margin:0 0 .25rem; }
+  p.sub { color:var(--muted); margin:0 0 1.5rem; }
+  label { display:block; font-weight:600; margin-bottom:.4rem; }
+  textarea { width:100%; min-height:8rem; padding:.75rem; border:1px solid var(--line); border-radius:8px;
+             background:var(--card); color:var(--fg); font:inherit; resize:vertical; }
+  .row { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.75rem; }
+  button { font:inherit; padding:.55rem 1rem; border-radius:8px; border:1px solid var(--line);
+           background:var(--card); color:var(--fg); cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  @media (prefers-color-scheme: dark) { button.primary { color:#10110f; } }
+  button:disabled { opacity:.6; cursor:wait; }
+  #result { margin-top:1.5rem; padding:1rem; border:1px solid var(--line); border-radius:8px; background:var(--card); min-height:4.5rem; }
+  #verdict { font-size:1.25rem; font-weight:700; margin:0; }
+  #verdict.spam { color:var(--spam); } #verdict.ham { color:var(--ham); }
+  #detail { color:var(--muted); margin:.25rem 0 0; font-size:.9rem; }
+  button:focus-visible, textarea:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Spam Classifier</h1>
+  <p class="sub">Paste a text message and see whether the model thinks it is spam.</p>
+
+  <label for="text">Message</label>
+  <textarea id="text" maxlength="1000" placeholder="e.g. WINNER! Call now to claim your free prize"></textarea>
+  <div class="row">
+    <button id="go" class="primary" type="button">Check message</button>
+    <button id="ex-spam" type="button">Try a spam example</button>
+    <button id="ex-ham" type="button">Try a normal message</button>
+  </div>
+
+  <div id="result" aria-live="polite">
+    <p id="verdict"></p>
+    <p id="detail">Result appears here.</p>
+  </div>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const verdict = $("verdict"), detail = $("detail"), go = $("go");
+
+  function show(cls, title, text) {
+    verdict.className = cls;
+    verdict.textContent = title;   // textContent, never innerHTML: the text is never parsed as HTML
+    detail.textContent = text;
+  }
+
+  async function check() {
+    const text = $("text").value;
+    if (!text.trim()) { show("", "", "Type or paste a message first."); return; }
+    go.disabled = true;
+    try {
+      const res = await fetch("/predict", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }),
+      });
+      if (!res.ok) { show("", "", res.status === 422 ? "That message was rejected (blank or too long)." : "Server error, try again."); return; }
+      const data = await res.json();
+      show(data.label, data.label === "spam" ? "Spam" : "Not spam",
+           "Spam score " + data.spam_score.toFixed(2) + " (0 to 1; a ranking score, not a calibrated probability)");
+    } catch (e) {
+      show("", "", "Could not reach the server.");
+    } finally {
+      go.disabled = false;
+    }
+  }
+
+  go.addEventListener("click", check);
+  $("ex-spam").addEventListener("click", () => { $("text").value = "WINNER!! You have been selected to receive a free prize. Call 09061701461 now to claim, T&Cs apply."; check(); });
+  $("ex-ham").addEventListener("click", () => { $("text").value = "Are we still meeting for lunch tomorrow? I can do 1pm."; check(); });
+</script>
+</body>
+</html>
