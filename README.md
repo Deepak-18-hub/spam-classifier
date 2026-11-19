@@ -2,11 +2,9 @@
 
 A web app that tells you whether a text message is spam, built to learn the full ML path: data, training, evaluation, serving, and deployment.
 
-**Status:** Milestones 1-4 built and verified locally (explore, train, API + tests, web page). The Docker image builds and runs (tested locally with Docker Desktop). M5 compared a fine-tuned DistilBERT against the baseline (mean test F1 0.966 vs 0.920, but about 36x slower on CPU and 256 MB vs 157 KB; details in [docs/PROJECT-REPORT.md](docs/PROJECT-REPORT.md) and `models/metrics_bert.json`); the app still serves the small baseline.
+**Status:** Milestones 1-4 built and verified locally (explore, train, API + tests, web page). The Docker image builds and runs (tested locally with Docker Desktop). M5 compared a fine-tuned DistilBERT against the baseline (mean test F1 0.966 vs 0.920, but about 36x slower on CPU and 256 MB vs 157 KB; details in `models/metrics_bert.json`); the app still serves the small baseline.
 
 **Live demo:** https://spam-classifier-oko3.onrender.com (Render free tier: it sleeps when idle, so the first visit after a quiet period takes about a minute; no rate limiting).
-
-Plan and decisions: [docs/DECISIONS.md](docs/DECISIONS.md)
 
 ## Results (held-out test set, 1,035 messages)
 

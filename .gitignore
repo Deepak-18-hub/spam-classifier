@@ -13,7 +13,10 @@ __pycache__/
 data/raw/
 *.pkl
 
-# Node packages used only to build the Word report (docs/report/build_report.js)
+# Local-only notes and report: kept on the owner's computer, not published
+docs/
+
+# Node packages (used only to build the local report)
 node_modules/
 
 # Fine-tuned DistilBERT weights (~255 MB): reproducible with python -m spamclf.train_bert

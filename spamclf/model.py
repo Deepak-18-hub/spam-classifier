@@ -20,7 +20,7 @@ def make_pipeline(classifier) -> Pipeline:
 
 
 def load_model(path: Path = MODEL_PATH) -> Pipeline:
-    # joblib files can run code when loaded: only ever load one you trained yourself (D6).
+    # joblib files can run code when loaded: only ever load one you trained yourself.
     return joblib.load(path)
 
 

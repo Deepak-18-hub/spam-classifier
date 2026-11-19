@@ -20,7 +20,7 @@ def test_predict_one_label_follows_threshold(toy_model):
 # The committed real model: guards the artifact that actually ships.
 def test_committed_model_matches_installed_sklearn():
     saved = json.loads(MODEL_PATH.with_name("metrics.json").read_text(encoding="utf-8"))
-    assert saved["versions"]["scikit-learn"] == sklearn.__version__, "retrain: sklearn version changed (D6)"
+    assert saved["versions"]["scikit-learn"] == sklearn.__version__, "retrain: the scikit-learn version changed since the model was saved"
 
 
 def test_committed_model_obvious_cases():

@@ -1,4 +1,4 @@
-# Built and run-tested locally with Docker Desktop 29.9.3 (see docs/DECISIONS.md, D17).
+# Built and run-tested locally with Docker Desktop 29.9.3.
 FROM python:3.13-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
