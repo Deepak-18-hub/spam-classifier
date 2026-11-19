@@ -40,6 +40,13 @@ def test_bad_input_is_rejected(client, payload):
     assert client.post("/predict", json=payload).status_code == 422
 
 
+def test_page_limit_matches_api_limit(client):
+    from spamclf.api import MAX_CHARS
+
+    html = client.get("/").text
+    assert f'maxlength="{MAX_CHARS}"' in html and f"const MAX = {MAX_CHARS}" in html
+
+
 def test_root_serves_the_web_page(client):
     r = client.get("/")
     assert r.status_code == 200

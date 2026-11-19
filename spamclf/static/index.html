@@ -3,83 +3,251 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Paste a text message and see whether a machine-learning model thinks it is spam.">
 <title>Spam Classifier</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2325695a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z'/%3E%3Cpath d='M8.5 12.5l2.5 2.5 4.5-5'/%3E%3C/svg%3E">
 <style>
-  :root { --bg:#fafaf7; --fg:#1d1d1b; --muted:#6b6b66; --card:#fff; --line:#dcdcd4; --accent:#2f5d50; --spam:#a63d2f; --ham:#2f6b3a; }
+  :root {
+    color-scheme: light dark;
+    --bg:#f5f6f3; --surface:#ffffff; --ink:#15171a; --muted:#585d63; --line:#d9dcd6;
+    --accent:#25695a; --on-accent:#ffffff;
+    --spam:#b3261e; --spam-bg:#fdecea; --ham:#17692f; --ham-bg:#e6f4ea; --warn:#8a5a00;
+    --track:#e4e7e1; --shadow:0 1px 2px rgba(20,24,20,.06), 0 4px 16px rgba(20,24,20,.06);
+  }
   @media (prefers-color-scheme: dark) {
-    :root { --bg:#161715; --fg:#ecece6; --muted:#9a9a92; --card:#1f201e; --line:#34352f; --accent:#7fb5a3; --spam:#e07b6c; --ham:#7fc48a; }
+    :root {
+      --bg:#121413; --surface:#1b1e1c; --ink:#eceee9; --muted:#a3a8a2; --line:#30342f;
+      --accent:#7fc4ae; --on-accent:#0e1411;
+      --spam:#ff9d8f; --spam-bg:#3a1f1c; --ham:#7ad695; --ham-bg:#17301f; --warn:#e3b341;
+      --track:#2a2e2b; --shadow:none;
+    }
   }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui, sans-serif; }
-  main { max-width:40rem; margin:0 auto; padding:2rem 1rem; }
-  h1 { font-size:1.5rem; margin:0 0 .25rem; }
-  p.sub { color:var(--muted); margin:0 0 1.5rem; }
-  label { display:block; font-weight:600; margin-bottom:.4rem; }
-  textarea { width:100%; min-height:8rem; padding:.75rem; border:1px solid var(--line); border-radius:8px;
-             background:var(--card); color:var(--fg); font:inherit; resize:vertical; }
-  .row { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.75rem; }
-  button { font:inherit; padding:.55rem 1rem; border-radius:8px; border:1px solid var(--line);
-           background:var(--card); color:var(--fg); cursor:pointer; }
-  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
-  @media (prefers-color-scheme: dark) { button.primary { color:#10110f; } }
-  button:disabled { opacity:.6; cursor:wait; }
-  #result { margin-top:1.5rem; padding:1rem; border:1px solid var(--line); border-radius:8px; background:var(--card); min-height:4.5rem; }
-  #verdict { font-size:1.25rem; font-weight:700; margin:0; }
-  #verdict.spam { color:var(--spam); } #verdict.ham { color:var(--ham); }
-  #detail { color:var(--muted); margin:.25rem 0 0; font-size:.9rem; }
-  button:focus-visible, textarea:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  main { max-width:44rem; margin:0 auto; padding:1.5rem 1rem 3rem; }
+  @media (min-width: 640px) { main { padding-top:3rem; } }
+
+  .head { display:flex; gap:.85rem; align-items:center; margin-bottom:1.5rem; }
+  .mark { flex:none; width:2.75rem; height:2.75rem; border-radius:12px; display:grid; place-items:center;
+          background:var(--accent); color:var(--on-accent); }
+  .mark svg { width:1.6rem; height:1.6rem; }
+  h1 { font-size:1.6rem; line-height:1.2; margin:0; letter-spacing:-.01em; }
+  .sub { color:var(--muted); margin:.15rem 0 0; }
+
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:1.1rem; box-shadow:var(--shadow); }
+  @media (min-width: 640px) { .card { padding:1.4rem; } }
+  label { display:block; font-weight:600; margin-bottom:.45rem; }
+  textarea { width:100%; min-height:8.5rem; padding:.8rem .9rem; border:1px solid var(--line); border-radius:12px;
+             background:var(--bg); color:var(--ink); font:inherit; resize:vertical; transition:border-color .15s, box-shadow .15s; }
+  textarea::placeholder { color:var(--muted); opacity:1; }
+  textarea:hover { border-color:var(--muted); }
+  .meta { display:flex; justify-content:space-between; gap:1rem; margin:.4rem 0 0; font-size:.875rem; color:var(--muted); }
+  #count.near { color:var(--warn); font-weight:600; }
+
+  .actions { display:flex; gap:.6rem; flex-wrap:wrap; margin-top:1rem; }
+  button { font:inherit; min-height:2.75rem; padding:.5rem 1.1rem; border-radius:12px; cursor:pointer;
+           border:1px solid var(--line); background:var(--surface); color:var(--ink);
+           transition:background-color .15s, border-color .15s, transform .1s; }
+  button:hover:not(:disabled) { border-color:var(--muted); }
+  button:active:not(:disabled) { transform:translateY(1px); }
+  button:disabled { cursor:progress; opacity:.75; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:600;
+                   display:inline-flex; align-items:center; gap:.5rem; }
+  button.primary:hover:not(:disabled) { filter:brightness(1.08); }
+  button.ghost { background:transparent; }
+  :where(button, textarea, summary, a):focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+
+  .spinner { width:1rem; height:1rem; border-radius:50%; border:2px solid currentColor; border-right-color:transparent;
+             animation:spin .7s linear infinite; display:none; }
+  [aria-busy="true"] .spinner { display:inline-block; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .examples { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--line); }
+  .examples .lead { color:var(--muted); font-size:.9rem; margin-right:.15rem; }
+  .chip { min-height:2.75rem; padding:.3rem .9rem; border-radius:999px; font-size:.92rem; }
+
+  .result { margin-top:1.25rem; border:1px solid var(--line); border-radius:16px; background:var(--surface); padding:1.1rem; min-height:6rem; box-shadow:var(--shadow); }
+  @media (min-width: 640px) { .result { padding:1.4rem; } }
+  .result .idle { color:var(--muted); margin:0; }
+  .verdict { display:flex; align-items:center; gap:.8rem; }
+  .badge { flex:none; width:3rem; height:3rem; border-radius:50%; display:grid; place-items:center; }
+  .badge svg { width:1.7rem; height:1.7rem; }
+  .verdict h2 { margin:0; font-size:1.3rem; line-height:1.25; }
+  .verdict p { margin:.1rem 0 0; color:var(--muted); font-size:.95rem; }
+  .result[data-state="spam"] { border-color:var(--spam); }
+  .result[data-state="spam"] .badge { background:var(--spam-bg); color:var(--spam); }
+  .result[data-state="spam"] h2 { color:var(--spam); }
+  .result[data-state="ham"] { border-color:var(--ham); }
+  .result[data-state="ham"] .badge { background:var(--ham-bg); color:var(--ham); }
+  .result[data-state="ham"] h2 { color:var(--ham); }
+
+  .meter-wrap { margin-top:1.1rem; }
+  .meter { position:relative; height:.7rem; border-radius:999px; background:var(--track); overflow:visible; }
+  .fill { height:100%; border-radius:999px; width:0; transition:width .45s ease; }
+  .result[data-state="spam"] .fill { background:var(--spam); }
+  .result[data-state="ham"] .fill { background:var(--ham); }
+  .tick { position:absolute; left:50%; top:-.3rem; bottom:-.3rem; width:2px; background:var(--ink); opacity:.55; border-radius:1px; }
+  .scale { display:flex; justify-content:space-between; font-size:.8rem; color:var(--muted); margin-top:.35rem; }
+  .note { font-size:.85rem; color:var(--muted); margin:.6rem 0 0; }
+
+  .error { display:flex; gap:.6rem; align-items:flex-start; color:var(--warn); margin:0; font-weight:600; }
+  .error svg { flex:none; width:1.3rem; height:1.3rem; margin-top:.1rem; }
+  .hint { color:var(--muted); margin:.5rem 0 0; font-size:.92rem; }
+  .loading { display:flex; align-items:center; gap:.7rem; margin:0; color:var(--muted); }
+  .loading .spinner { display:inline-block; color:var(--accent); }
+
+  details.about { margin-top:1.25rem; border:1px solid var(--line); border-radius:16px; background:var(--surface); padding:0 1.1rem; }
+  summary { cursor:pointer; padding:.9rem 0; font-weight:600; min-height:2.75rem; }
+  details.about .body { padding:0 0 1rem; color:var(--muted); font-size:.95rem; }
+  details.about ul { margin:.4rem 0 0; padding-left:1.2rem; }
+  details.about li { margin:.25rem 0; }
+  a { color:var(--accent); }
+  footer { margin-top:1.5rem; color:var(--muted); font-size:.85rem; text-align:center; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
+  }
 </style>
 </head>
 <body>
 <main>
-  <h1>Spam Classifier</h1>
-  <p class="sub">Paste a text message and see whether the model thinks it is spam.</p>
+  <header class="head">
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+    </div>
+    <div>
+      <h1>Spam Classifier</h1>
+      <p class="sub">Paste a text message and see whether the model thinks it is spam.</p>
+    </div>
+  </header>
 
-  <label for="text">Message</label>
-  <textarea id="text" maxlength="1000" placeholder="e.g. WINNER! Call now to claim your free prize"></textarea>
-  <div class="row">
-    <button id="go" class="primary" type="button">Check message</button>
-    <button id="ex-spam" type="button">Try a spam example</button>
-    <button id="ex-ham" type="button">Try a normal message</button>
-  </div>
+  <section class="card">
+    <label for="text">Message</label>
+    <textarea id="text" maxlength="1000" rows="5" placeholder="Paste or type a message here…" aria-describedby="hint count"></textarea>
+    <div class="meta">
+      <span id="hint">Tip: press Ctrl+Enter to check</span>
+      <span id="count">0 / 1000</span>
+    </div>
+    <div class="actions">
+      <button id="go" class="primary" type="button"><span class="spinner" aria-hidden="true"></span><span id="goLabel">Check message</span></button>
+      <button id="clear" class="ghost" type="button">Clear</button>
+    </div>
+    <div class="examples" role="group" aria-label="Example messages">
+      <span class="lead">Try an example:</span>
+      <button class="chip" type="button" data-text="WINNER!! You have been selected to receive a free prize. Call 09061701461 now to claim, T&amp;Cs apply.">Prize scam</button>
+      <button class="chip" type="button" data-text="Are we still meeting for lunch tomorrow? I can do 1pm.">Everyday text</button>
+      <button class="chip" type="button" data-text="Your OTP is 482913. Do not share it with anyone.">Verification code</button>
+    </div>
+  </section>
 
-  <div id="result" aria-live="polite">
-    <p id="verdict"></p>
-    <p id="detail">Result appears here.</p>
-  </div>
+  <section id="result" class="result" data-state="idle" role="status" aria-live="polite" aria-atomic="true">
+    <p class="idle">Your result will appear here.</p>
+  </section>
+
+  <details class="about">
+    <summary>About this model</summary>
+    <div class="body">
+      <p>A TF-IDF text model with class-balanced logistic regression, trained on 5,171 unique messages from the public UCI SMS Spam Collection. On held-out test messages it reaches a spam F1 score of 0.92 (precision 0.92, recall 0.92).</p>
+      <ul>
+        <li>The training data is from the UK and Singapore and is old, so it can be wrong on modern messages such as bank alerts.</li>
+        <li>Short spam is missed more often than long spam.</li>
+        <li>The score is a ranking score, not a calibrated probability. Treat the result as a suggestion, not a decision.</li>
+      </ul>
+      <p>Messages are sent to this server only to be scored; this page does not store them. Developers can use the <a href="/docs">API documentation</a>.</p>
+    </div>
+  </details>
+
+  <footer>Demo project for learning. Not for real filtering decisions.</footer>
 </main>
-<script>
-  const $ = (id) => document.getElementById(id);
-  const verdict = $("verdict"), detail = $("detail"), go = $("go");
 
-  function show(cls, title, text) {
-    verdict.className = cls;
-    verdict.textContent = title;   // textContent, never innerHTML: the text is never parsed as HTML
-    detail.textContent = text;
+<script>
+  const MAX = 1000, THRESHOLD = 0.5;
+  const $ = (id) => document.getElementById(id);
+  const text = $("text"), go = $("go"), goLabel = $("goLabel"), clearBtn = $("clear"), count = $("count"), result = $("result");
+
+  const ICON_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>';
+  const ICON_SPAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M12 8v5"/><path d="M12 16.5h.01"/></svg>';
+  const ICON_ERR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5"/><path d="M12 16.5h.01"/></svg>';
+
+  // Build elements with textContent only (never innerHTML with user or server text). The icons above are fixed strings.
+  function el(tag, cls, content) { const e = document.createElement(tag); if (cls) e.className = cls; if (content != null) e.textContent = content; return e; }
+  function withIcon(svg, node) { node.insertAdjacentHTML("afterbegin", svg); return node; }
+
+  function setState(state, ...children) { result.dataset.state = state; result.replaceChildren(...children); }
+
+  function updateCount() {
+    const n = text.value.length;
+    count.textContent = n + " / " + MAX;
+    count.classList.toggle("near", n >= MAX * 0.9);
+  }
+
+  function showIdle() { setState("idle", el("p", "idle", "Your result will appear here.")); }
+
+  function showError(message, hint) {
+    const p = withIcon(ICON_ERR, el("p", "error")); p.append(el("span", null, message));
+    const nodes = [p]; if (hint) nodes.push(el("p", "hint", hint));
+    setState("error", ...nodes);
+  }
+
+  function showResult(label, score) {
+    const spam = label === "spam";
+    const s = Math.max(0, Math.min(1, Number(score)));
+    const badge = withIcon(spam ? ICON_SPAM : ICON_OK, el("div", "badge"));
+    const words = el("div");
+    words.append(el("h2", null, spam ? "Looks like spam" : "Looks legitimate"),
+                 el("p", null, "Spam score " + s.toFixed(2) + " (decision threshold " + THRESHOLD.toFixed(2) + ")"));
+    const verdict = el("div", "verdict"); verdict.append(badge, words);
+
+    const fill = el("div", "fill"); fill.style.width = (s * 100).toFixed(1) + "%";
+    const meter = el("div", "meter"); meter.setAttribute("role", "img");
+    meter.setAttribute("aria-label", "Spam score " + s.toFixed(2) + " on a scale from 0 to 1; scores at or above " + THRESHOLD + " are called spam");
+    meter.append(fill, el("div", "tick"));
+    const scale = el("div", "scale"); scale.append(el("span", null, "0"), el("span", null, "0.5"), el("span", null, "1"));
+    const wrap = el("div", "meter-wrap"); wrap.append(meter, scale);
+
+    setState(spam ? "spam" : "ham", verdict, wrap,
+             el("p", "note", "A ranking score, not a probability. Use it as a hint, not a final decision."));
+  }
+
+  function setLoading(on) {
+    go.disabled = on; clearBtn.disabled = on; go.setAttribute("aria-busy", String(on));
+    goLabel.textContent = on ? "Checking…" : "Check message";
+    document.querySelectorAll(".chip").forEach((c) => (c.disabled = on));
   }
 
   async function check() {
-    const text = $("text").value;
-    if (!text.trim()) { show("", "", "Type or paste a message first."); return; }
-    go.disabled = true;
+    const value = text.value;
+    if (!value.trim()) { showError("Type or paste a message first.", null); text.focus(); return; }
+    setLoading(true);
+    const wait = el("p", "loading"); wait.append(el("span", "spinner"), el("span", null, "Checking your message…"));
+    setState("loading", wait);
+    const hintTimer = setTimeout(() => {
+      wait.after(el("p", "hint", "This demo runs on a free server that sleeps when idle. The first check after a quiet period can take up to a minute."));
+    }, 4000);
+    const ctrl = new AbortController(), abortTimer = setTimeout(() => ctrl.abort(), 90000);
     try {
-      const res = await fetch("/predict", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }),
-      });
-      if (!res.ok) { show("", "", res.status === 422 ? "That message was rejected (blank or too long)." : "Server error, try again."); return; }
+      const res = await fetch("/predict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: value }), signal: ctrl.signal });
+      if (res.status === 422) { showError("That message can’t be checked.", "It must not be blank and can be at most " + MAX.toLocaleString("en-US") + " characters."); return; }
+      if (!res.ok) { showError("The server had a problem.", "Please try again in a moment."); return; }
       const data = await res.json();
-      show(data.label, data.label === "spam" ? "Spam" : "Not spam",
-           "Spam score " + data.spam_score.toFixed(2) + " (0 to 1; a ranking score, not a calibrated probability)");
+      showResult(data.label, data.spam_score);
     } catch (e) {
-      show("", "", "Could not reach the server.");
+      if (e.name === "AbortError") showError("That took too long.", "The server may still be waking up. Please try again.");
+      else showError("Could not reach the server.", "Check your connection and try again.");
     } finally {
-      go.disabled = false;
+      clearTimeout(hintTimer); clearTimeout(abortTimer); setLoading(false);
     }
   }
 
+  text.addEventListener("input", updateCount);
+  text.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); check(); } });
   go.addEventListener("click", check);
-  $("ex-spam").addEventListener("click", () => { $("text").value = "WINNER!! You have been selected to receive a free prize. Call 09061701461 now to claim, T&Cs apply."; check(); });
-  $("ex-ham").addEventListener("click", () => { $("text").value = "Are we still meeting for lunch tomorrow? I can do 1pm."; check(); });
+  clearBtn.addEventListener("click", () => { text.value = ""; updateCount(); showIdle(); text.focus(); });
+  document.querySelectorAll(".chip").forEach((chip) => chip.addEventListener("click", () => { text.value = chip.dataset.text; updateCount(); check(); }));
+  updateCount();
 </script>
 </body>
 </html>
