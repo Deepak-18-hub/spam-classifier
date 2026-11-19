@@ -13,6 +13,9 @@ __pycache__/
 data/raw/
 *.pkl
 
+# Node packages used only to build the Word report (docs/report/build_report.js)
+node_modules/
+
 # Fine-tuned DistilBERT weights (~255 MB): reproducible with python -m spamclf.train_bert
 local_models/
 
